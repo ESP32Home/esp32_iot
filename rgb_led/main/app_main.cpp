@@ -55,11 +55,11 @@ bool is_client_ready = false;
 float g_brightness = 1.0;
 
 const gpio_num_t BLUE_LED=(gpio_num_t)2;
-const gpio_num_t RGB_GPIO=(gpio_num_t)18;
+const gpio_num_t RGB_GPIO=(gpio_num_t)13;
 
 //static const uint8_t g_nb_led = 24;
-static const uint16_t g_nb_led = 1;
-static const uint16_t g_nb_lines = 1;
+static const uint16_t g_nb_led = 8;
+static const uint16_t g_nb_lines = 8;
 
 
 struct grad_t{
@@ -375,7 +375,7 @@ static void animation_timer_callback(void* arg)
 
 void leds_set_all(uint8_t red,uint8_t green,uint8_t blue, bool show = true)
 {
-    //animation.kill();
+    animation.kill();
     for(int i=0;i<g_nb_led;i++)
     {
         my_rgb.setPixel(i,red,green,blue);
@@ -686,21 +686,11 @@ void app_main()
     esp_log_level_set("*", ESP_LOG_INFO);
     esp_log_level_set("MQTT_EXAMPLE", ESP_LOG_INFO);
 
-    ESP_LOGI(TAG, "0 g 0");
-    leds_set_all(0,1,0);
-    delay_ms(4000);
-    ESP_LOGI(TAG, "r g b ");
-    leds_set_all(1,1,1);
-    delay_ms(4000);
-    ESP_LOGI(TAG, "0 0 0");
-    leds_set_all(0,0,0);
-    delay_ms(4000);
-    ESP_LOGI(TAG, "0 0 0");
-    leds_set_all(0,0,0);
+    ESP_LOGI(TAG, "red waiting for wifi");
+    leds_set_all(1,0,0);
 
 
     nvs_flash_init();
-    //timers_init(); for the led animation
     
     ESP_ERROR_CHECK(esp_event_loop_create_default());
     timestamp_start();
@@ -709,15 +699,13 @@ void app_main()
     ESP_ERROR_CHECK(example_connect());
     mqtt_app_start();
 
-    ESP_LOGI(TAG, "No demo leds");
-    //leds_set_all(1,0,0);
-    //delay_ms(500);
-    //leds_set_all(0,1,0);
-    //delay_ms(500);
-    //leds_set_all(0,0,1);
-    //delay_ms(500);
-    //leds_set_all(0,0,0);
-    //ESP_LOGI(TAG, "end of demo leds");
+    ESP_LOGI(TAG, "green wifi and mqtt connected");
+    leds_set_all(0,1,0);
+    delay_ms(100);
+    leds_set_all(0,0,0);
+
+    //to start the animation
+    timers_init();
 
 
 }
