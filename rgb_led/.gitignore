@@ -2,3 +2,4 @@ build
 server_certs
 sdkconfig
 CMakeFiles
+sdkconfig.old

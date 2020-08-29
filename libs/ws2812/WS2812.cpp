@@ -129,6 +129,8 @@ WS2812::WS2812(gpio_num_t dinPin, uint16_t pixelCount, uint16_t lineCount, int c
 	this->colorOrder = (char*) "GRB";
 	clear();
 
+    //rmt_config_t config = RMT_DEFAULT_CONFIG_TX(dinPin, this->channel);
+    //config.clk_div = 2;
 	rmt_config_t config;
 	config.rmt_mode                  = RMT_MODE_TX;
 	config.channel                   = this->channel;

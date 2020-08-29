@@ -8,8 +8,10 @@
 #include "esp_wifi.h"
 #include "esp_system.h"
 #include "nvs_flash.h"
-#include "esp_event_loop.h"
+#include "esp_event.h"
+#include "esp_netif.h"
 #include "esp_timer.h"
+#include "protocol_examples_common.h"
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -22,8 +24,6 @@
 #include "lwip/netdb.h"
 
 #include "driver/gpio.h"
-#include "driver/adc.h"
-#include "esp_adc_cal.h"
 
 #include "esp_log.h"
 #include "mqtt_client.h"
@@ -31,12 +31,14 @@
 #include "WS2812.h"
 #include "../ArduinoJson/ArduinoJson.hpp"
 
+#define CONFIG_BROKER_URL "mqtt://10.0.0.42"
+
 static const char *TAG                  = "MQTT_EXAMPLE";
 static const char* TOPIC_ONE            = "esp/curvy/pixels/one";
 static const char* TOPIC_ALL            = "esp/curvy/pixels/all";
 static const char* TOPIC_LIST           = "esp/curvy/pixels/list";
 static const char* TOPIC_GRAD           = "esp/curvy/pixels/grad";
-static const char* TOPIC_LINES_GRAD     = "esp/curvy/lines/grad";
+//static const char* TOPIC_LINES_GRAD     = "esp/curvy/lines/grad";
 static const char* TOPIC_PANEL          = "esp/curvy/panel";
 static const char* TOPIC_BRIGHTNESS     = "esp/curvy/brightness";
 static const char* TOPIC_STATUS         = "esp/curvy/status";
@@ -46,7 +48,6 @@ static const char* TOPIC_SUB            = "esp/curvy/#";
 
 esp_timer_handle_t periodic_timer;
 
-static EventGroupHandle_t wifi_event_group;
 const static int CONNECTED_BIT = BIT0;
 
 esp_mqtt_client_handle_t g_client;
@@ -54,10 +55,12 @@ bool is_client_ready = false;
 float g_brightness = 1.0;
 
 const gpio_num_t BLUE_LED=(gpio_num_t)2;
-const gpio_num_t RGB_GPIO=(gpio_num_t)13;
+const gpio_num_t RGB_GPIO=(gpio_num_t)18;
 
 //static const uint8_t g_nb_led = 24;
-static const uint16_t g_nb_led = 256;
+static const uint16_t g_nb_led = 1;
+static const uint16_t g_nb_lines = 1;
+
 
 struct grad_t{
     uint8_t start_red   ;
@@ -152,7 +155,7 @@ void t4all_fire(WS2812* leds,action_flame_t &flame)
 {
     int Cooling = 55;
     int Sparking = 120;
-    int SpeedDelay = 15;
+    //int SpeedDelay = 15;
     static uint8_t heat[g_nb_led];//max nb leds is g_nb_leds
     int cooldown;
 
@@ -326,7 +329,7 @@ void animation_t::run()
 
 static void animation_timer_callback(void* arg);
 
-WS2812 my_rgb(RGB_GPIO,g_nb_led,8);
+WS2812 my_rgb(RGB_GPIO,g_nb_led,g_nb_lines);
 
 animation_t animation(&my_rgb);
 
@@ -372,7 +375,7 @@ static void animation_timer_callback(void* arg)
 
 void leds_set_all(uint8_t red,uint8_t green,uint8_t blue, bool show = true)
 {
-    animation.kill();
+    //animation.kill();
     for(int i=0;i<g_nb_led;i++)
     {
         my_rgb.setPixel(i,red,green,blue);
@@ -640,48 +643,14 @@ static esp_err_t mqtt_event_handler(esp_mqtt_event_handle_t event)
         case MQTT_EVENT_ERROR:
             ESP_LOGI(TAG, "MQTT_EVENT_ERROR");
             break;
-    }
-    return ESP_OK;
-}
-
-static esp_err_t wifi_event_handler(void *ctx, system_event_t *event)
-{
-    switch (event->event_id) {
-        case SYSTEM_EVENT_STA_START:
-            esp_wifi_connect();
+        case MQTT_EVENT_ANY:
+            ESP_LOGI(TAG, "MQTT_EVENT_ANY");
             break;
-        case SYSTEM_EVENT_STA_GOT_IP:
-            xEventGroupSetBits(wifi_event_group, CONNECTED_BIT);
-
-            break;
-        case SYSTEM_EVENT_STA_DISCONNECTED:
-            esp_wifi_connect();
-            xEventGroupClearBits(wifi_event_group, CONNECTED_BIT);
-            break;
-        default:
+        case MQTT_EVENT_BEFORE_CONNECT:
+            ESP_LOGI(TAG, "MQTT_EVENT_BEFORE_CONNECT");
             break;
     }
     return ESP_OK;
-}
-
-static void wifi_init(void)
-{
-    tcpip_adapter_init();
-    wifi_event_group = xEventGroupCreate();
-    ESP_ERROR_CHECK(esp_event_loop_init(wifi_event_handler, NULL));
-    wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
-    ESP_ERROR_CHECK(esp_wifi_init(&cfg));
-    ESP_ERROR_CHECK(esp_wifi_set_storage(WIFI_STORAGE_RAM));
-    wifi_config_t wifi_config;
-    memset(&wifi_config,0,sizeof(wifi_config_t));
-    strcpy((char*)wifi_config.sta.ssid,CONFIG_WIFI_SSID);
-    strcpy((char*)wifi_config.sta.password,CONFIG_WIFI_PASSWORD);
-    ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
-    ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_STA, &wifi_config));
-    ESP_LOGI(TAG, "start the WIFI SSID:[%s]", CONFIG_WIFI_SSID);
-    ESP_ERROR_CHECK(esp_wifi_start());
-    ESP_LOGI(TAG, "Waiting for wifi");
-    xEventGroupWaitBits(wifi_event_group, CONNECTED_BIT, false, true, portMAX_DELAY);
 }
 
 char mqtt_uri[32];
@@ -717,26 +686,38 @@ void app_main()
     esp_log_level_set("*", ESP_LOG_INFO);
     esp_log_level_set("MQTT_EXAMPLE", ESP_LOG_INFO);
 
+    ESP_LOGI(TAG, "0 g 0");
     leds_set_all(0,1,0);
-    delay_ms(500);
+    delay_ms(4000);
+    ESP_LOGI(TAG, "r g b ");
+    leds_set_all(1,1,1);
+    delay_ms(4000);
+    ESP_LOGI(TAG, "0 0 0");
     leds_set_all(0,0,0);
+    delay_ms(4000);
+    ESP_LOGI(TAG, "0 0 0");
+    leds_set_all(0,0,0);
+
 
     nvs_flash_init();
+    //timers_init(); for the led animation
     
+    ESP_ERROR_CHECK(esp_event_loop_create_default());
     timestamp_start();
-    wifi_init();
-    ESP_LOGI(TAG, "[APP] wifi_init in %lld ms", timestamp_stop()/1000);
-
+    ESP_ERROR_CHECK(esp_netif_init());
+    ESP_LOGI(TAG, "[APP] esp_netif_init in %lld ms", timestamp_stop()/1000);
+    ESP_ERROR_CHECK(example_connect());
     mqtt_app_start();
 
-    leds_set_all(1,0,0);
-    delay_ms(500);
-    leds_set_all(0,1,0);
-    delay_ms(500);
-    leds_set_all(0,0,1);
-    delay_ms(500);
-    leds_set_all(0,0,0);
+    ESP_LOGI(TAG, "No demo leds");
+    //leds_set_all(1,0,0);
+    //delay_ms(500);
+    //leds_set_all(0,1,0);
+    //delay_ms(500);
+    //leds_set_all(0,0,1);
+    //delay_ms(500);
+    //leds_set_all(0,0,0);
+    //ESP_LOGI(TAG, "end of demo leds");
 
-    timers_init();
 
 }
