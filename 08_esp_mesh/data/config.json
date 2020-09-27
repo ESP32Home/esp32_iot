@@ -1,0 +1,24 @@
+{
+    "mesh":{
+        "id":"77:77:77:77:77:77",
+        "channel":0,
+        "topology":"tree",
+        "max_layer":6,
+        "leaf":{
+            "ap_expire_sec":60,
+            "duty_type":"request",
+            "demand_cycle":12
+        },
+        "parent":{
+            "ap_connections":6,
+            "route_table_size":50,
+            "announce_short_ms":600,
+            "announce_long_ms":3300,
+            "network":{
+                "duty":12,
+                "duration":-1,
+                "rule":"entire"
+            }
+        }
+    }
+}

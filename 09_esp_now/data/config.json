@@ -1,0 +1,8 @@
+{
+    "wifi":{
+        "mode":"STA",
+        "channel":1
+    },
+    "espnow":{
+    }
+}
