@@ -5,6 +5,7 @@
 
 #include <ConfigUtils.h>
 #include <EspNowWrapper.h>
+#include <ESPStringUtils.h>
 
 DynamicJsonDocument config(5*1024);//5 KB
 DynamicJsonDocument secret(1*1024);//1 KB
@@ -14,8 +15,13 @@ NowApp espnow;
 
 uint32_t cycle_count = 0;
 
+//https://esp32.com/viewtopic.php?t=12992
+
+String topic;
+
 void meshMessage(String &payload,String from){
   Serial.printf("RX> from(%s) => [%s]\n",from.c_str(),payload.c_str());
+  mqtt.publish("espnow/"+from,payload);
 }
 
 void mqtt_start(DynamicJsonDocument &config){
@@ -24,6 +30,7 @@ void mqtt_start(DynamicJsonDocument &config){
     Serial.println("mqtt>connected");
   }
 }
+
 
 void setup() {
   
@@ -42,13 +49,18 @@ void setup() {
     delay(1000);
   }
   timelog("config loaded");
-  mqtt_start(config);
-  mqtt.publish("espnow","test");
-  mqtt.loop();
+
+
+  byte mac[6];
+  WiFi.macAddress(mac);
+  topic = "espnow/"+hextab_to_string(mac);
 
   espnow.start(config,secret);
   espnow.onMessage(meshMessage);
 
+  mqtt_start(config);
+  mqtt.publish(topic,"gateway (start)");
+  mqtt.loop();
   timelog("setup() done");
 
 }
@@ -57,9 +69,7 @@ void loop() {
   cycle_count++;
   Serial.printf("\n\n");
   timelog("loop start cycle ("+String(cycle_count)+")");
-  mqtt.publish("espnow","Mqtt("+String(cycle_count)+")");
-  delay(1000);
-  espnow.print_info();
-  espnow.broadcast("Hello Everyone ("+String(cycle_count)+")");
+  mqtt.publish(topic,"gateway("+String(cycle_count)+")");
+  Serial.print(WiFi.channel());
   delay(5000);
 }

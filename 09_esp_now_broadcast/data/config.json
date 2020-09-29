@@ -1,13 +1,14 @@
 {
     "wifi":{
         "mode":"AP",
-        "channel":1
+        "channel":8
     },
     "espnow":{
+        "gateway":true
     },
     "mqtt" : {
         "host":"10.0.0.42",
         "port":1883,
-        "client_id":"esp_test3_now"
+        "client_id":"esp_now_g"
     }
 }
