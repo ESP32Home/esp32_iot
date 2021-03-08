@@ -17,20 +17,10 @@ uint32_t cycle_count = 0;
 
 //https://esp32.com/viewtopic.php?t=12992
 
-String topic;
-
 void meshMessage(String &payload,String from){
   Serial.printf("RX> from(%s) => [%s]\n",from.c_str(),payload.c_str());
   mqtt.publish("espnow/"+from,payload);
 }
-
-void mqtt_start(DynamicJsonDocument &config){
-  mqtt.begin(config["mqtt"]["host"],config["mqtt"]["port"], wifi);
-  if(mqtt.connect(config["mqtt"]["client_id"])){
-    Serial.println("mqtt>connected");
-  }
-}
-
 
 void setup() {
   
@@ -41,15 +31,8 @@ void setup() {
   load_json(secret,"/secret.json");
   timelog("config loaded");
 
-  String ssid = secret["wifi"]["access_point"];
-  String pass = secret["wifi"]["password"];
   WiFi.mode(WIFI_MODE_STA);
   timelog("config loaded");
-
-
-  byte mac[6];
-  WiFi.macAddress(mac);
-  topic = "espnow/"+hextab_to_string(mac);
 
   espnow.start(config,secret);
   espnow.onMessage(meshMessage);

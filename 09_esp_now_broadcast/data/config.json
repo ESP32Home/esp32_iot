@@ -1,7 +1,7 @@
 {
     "wifi":{
         "mode":"AP",
-        "channel":8
+        "channel":5
     },
     "espnow":{
         "gateway":true

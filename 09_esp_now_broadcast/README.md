@@ -1,13 +1,7 @@
-## Usage
-in terminal
-```console
-> pio lib install
-> pio run
-> pio run -t upload
-> pio run -t uploadfs
-> pio run -t monitor
-```
+# Documentation
+https://www.homesmartmesh.com/docs/microcontrollers/esp32/esp-now/#broadcast
 
-# References
-* [docs.espressif esp32 api-reference esp-now](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/network/esp_now.html)
+# Questions Comments
+
+[Home Smart Mesh ESP-Now discord channel](https://discord.gg/caHerwBdz8)
 
