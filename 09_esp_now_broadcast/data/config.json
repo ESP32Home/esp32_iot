@@ -4,11 +4,7 @@
         "channel":5
     },
     "espnow":{
-        "gateway":true
-    },
-    "mqtt" : {
-        "host":"10.0.0.42",
-        "port":1883,
-        "client_id":"esp_now_g"
+        "gateway":true,
+        "channel":5
     }
 }

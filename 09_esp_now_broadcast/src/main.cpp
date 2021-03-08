@@ -32,14 +32,17 @@ void setup() {
   timelog("config loaded");
 
   WiFi.mode(WIFI_MODE_STA);
-  timelog("config loaded");
+  WiFi.disconnect();
+  timelog("wifi mode set");
 
   espnow.start(config,secret);
   espnow.onMessage(meshMessage);
 
-  espnow.set_channel(config["wifi"]["channel"]);
-
+  //espnow.set_channel(config["wifi"]["channel"]);
   timelog("setup() done");
+  String msg("Good Morning Everyone (0)");
+  espnow.broadcast(msg);
+  timelog("initial broadcast() done");
 
 }
 
